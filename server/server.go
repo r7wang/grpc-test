@@ -48,13 +48,15 @@ func (s *grpcTestServer) GetMultiMessage(userMessage *pb.UserMessage, stream pb.
 		if err != nil {
 			return err
 		}
-		msg := &pb.ProcessedMessage{
+		procMessage := &pb.ProcessedMessage{
 			Message:      userMessage,
 			ReceivedTime: pbTime,
 		}
-		stream.Send(msg)
-		time.Sleep(2 * time.Second)
+		stream.Send(procMessage)
+		time.Sleep(1 * time.Second)
 	}
+	// Make the client wait additional time, blocking the RPC call from completing.
+	time.Sleep(5 * time.Second)
 	return nil
 }
 
@@ -63,11 +65,11 @@ func (s *grpcTestServer) SendMultiMessage(stream pb.GrpcTest_SendMultiMessageSer
 	for {
 		userMessage, err := stream.Recv()
 		if err == io.EOF {
-			msg := &pb.ProcessedMessage{
+			procMessage := &pb.ProcessedMessage{
 				Message:      userMessage,
 				ReceivedTime: curTime,
 			}
-			return stream.SendAndClose(msg)
+			return stream.SendAndClose(procMessage)
 		}
 		if err != nil {
 			return err
@@ -86,11 +88,11 @@ func (s *grpcTestServer) GetSendMultiMessage(stream pb.GrpcTest_GetSendMultiMess
 			return err
 		}
 
-		msg := &pb.ProcessedMessage{
+		procMessage := &pb.ProcessedMessage{
 			Message:      userMessage,
 			ReceivedTime: curTime,
 		}
-		if err := stream.Send(msg); err != nil {
+		if err := stream.Send(procMessage); err != nil {
 			return err
 		}
 	}
