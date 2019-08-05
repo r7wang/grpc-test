@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"time"
@@ -25,34 +26,6 @@ var (
 )
 
 /*
-// runRecordRoute sends a sequence of points to server and expects to get a RouteSummary from server.
-func runRecordRoute(client pb.RouteGuideClient) {
-	// Create a random number of random points
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	pointCount := int(r.Int31n(100)) + 2 // Traverse at least two points
-	var points []*pb.Point
-	for i := 0; i < pointCount; i++ {
-		points = append(points, randomPoint(r))
-	}
-	log.Printf("Traversing %d points.", len(points))
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	stream, err := client.RecordRoute(ctx)
-	if err != nil {
-		log.Fatalf("%v.RecordRoute(_) = _, %v", client, err)
-	}
-	for _, point := range points {
-		if err := stream.Send(point); err != nil {
-			log.Fatalf("%v.Send(%v) = %v", stream, point, err)
-		}
-	}
-	reply, err := stream.CloseAndRecv()
-	if err != nil {
-		log.Fatalf("%v.CloseAndRecv() got error %v, want %v", stream, err, nil)
-	}
-	log.Printf("Route summary: %v", reply)
-}
-
 // runRouteChat receives a sequence of route notes, while sending notes for various locations.
 func runRouteChat(client pb.RouteGuideClient) {
 	notes := []*pb.RouteNote{
@@ -132,6 +105,34 @@ func test2(client pb.GrpcTestClient) {
 	}
 }
 
+func test3(client pb.GrpcTestClient) {
+	var userMessages []*pb.UserMessage
+	for i := 0; i < 5; i++ {
+		userMessages = append(userMessages,
+			&pb.UserMessage{
+				Text: fmt.Sprintf("test3 message: %d", i),
+			})
+	}
+
+	log.Printf("Running test3...")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	stream, err := client.SendMultiMessage(ctx)
+	if err != nil {
+		log.Fatalf("%v.SendMultiMessage(_) = _, %v", client, err)
+	}
+	for _, userMessage := range userMessages {
+		if err := stream.Send(userMessage); err != nil {
+			log.Fatalf("%v.Send(%v) = %v", stream, userMessage, err)
+		}
+	}
+	reply, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("%v.CloseAndRecv() got error %v, want %v", stream, err, nil)
+	}
+	log.Printf("Route summary: %v", reply)
+}
+
 func main() {
 	flag.Parse()
 	var opts []grpc.DialOption
@@ -157,5 +158,6 @@ func main() {
 
 	// Run tests.
 	//test1(client)
-	test2(client)
+	//test2(client)
+	test3(client)
 }
